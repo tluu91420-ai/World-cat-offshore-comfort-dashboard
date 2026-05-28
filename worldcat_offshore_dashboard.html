@@ -1,0 +1,1590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>World Cat 325 • Offshore Comfort Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&amp;family=Space+Grotesk:wght@500;600&amp;display=swap');
+        
+        :root {
+            --ocean-deep: #0a1625;
+            --ocean-mid: #0f2942;
+            --accent-cyan: #22d3ee;
+        }
+        
+        body {
+            font-family: 'Inter', system_ui, sans-serif;
+        }
+        
+        .font-display {
+            font-family: 'Space Grotesk', 'Inter', sans-serif;
+            font-weight: 600;
+        }
+
+        .glass {
+            background: rgba(15, 41, 66, 0.85);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(103, 232, 249, 0.1);
+        }
+
+        .section-header {
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            font-weight: 600;
+            color: #67e8f9;
+        }
+
+        .metric-value {
+            font-size: 1.75rem;
+            line-height: 1.1;
+            font-weight: 700;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .comfort-gauge {
+            width: 180px;
+            height: 180px;
+            border-radius: 9999px;
+            background: conic-gradient(from 180deg, #22c55e 0deg, #eab308 120deg, #ef4444 240deg);
+            position: relative;
+            box-shadow: 0 0 0 12px rgba(15, 41, 66, 0.6),
+                        inset 0 0 0 12px #0a1625;
+        }
+
+        .comfort-gauge::after {
+            content: '';
+            position: absolute;
+            inset: 18px;
+            background: #0f2942;
+            border-radius: 9999px;
+            box-shadow: inset 0 4px 12px rgba(0,0,0,0.4);
+        }
+
+        .three-container {
+            border-radius: 16px;
+            overflow: hidden;
+            background: linear-gradient(180deg, #0a1625 0%, #0f2942 100%);
+            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.4);
+            border: 1px solid rgba(103, 232, 249, 0.15);
+        }
+
+        .metric-card {
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
+                        box-shadow 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+
+        .navy-text {
+            color: #e0f2fe;
+        }
+
+        .wave {
+            animation: wave-float 3s ease-in-out infinite;
+        }
+
+        .dashboard-container {
+            max-width: 1480px;
+            margin: 0 auto;
+        }
+
+        .three-canvas {
+            display: block;
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        .status-badge {
+            padding: 4px 14px;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: -.3px;
+        }
+
+        .ocean-gradient {
+            background: linear-gradient(135deg, #0a1625 0%, #0f2942 50%, #164e63 100%);
+        }
+        
+        .data-value {
+            font-variant-numeric: tabular-nums;
+        }
+        
+        .subtle-grid {
+            background-image: 
+                linear-gradient(rgba(103, 232, 249, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(103, 232, 249, 0.03) 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+    </style>
+</head>
+<body class="bg-[#0a1625] text-slate-200">
+    <!-- Header -->
+    <div class="border-b border-slate-800 bg-[#0a1625]">
+        <div class="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
+            <div class="flex items-center gap-x-4">
+                <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-cyan-400 to-teal-500 flex items-center justify-center shadow-lg shadow-cyan-500/30">
+                    <i class="fa-solid fa-ship text-white text-3xl"></i>
+                </div>
+                <div>
+                    <div class="flex items-baseline gap-x-2">
+                        <span class="font-display text-3xl font-semibold tracking-tighter">World Cat 325</span>
+                        <span class="text-cyan-400 text-sm font-medium px-2.5 py-0.5 rounded-full bg-cyan-400/10">CC</span>
+                    </div>
+                    <p class="text-xs text-slate-400 -mt-0.5">2024 • Offshore Comfort Dashboard</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-x-3 text-sm">
+                <div class="px-3 py-1.5 rounded-2xl bg-slate-900 border border-slate-700 flex items-center gap-x-2 text-xs">
+                    <i class="fa-solid fa-location-dot text-emerald-400"></i>
+                    <span id="current-location">Gulf of Mexico • 70nm SE Freeport</span>
+                </div>
+                <div class="text-right text-xs leading-tight">
+                    <div class="text-slate-400">Forecast as of</div>
+                    <div id="forecast-time" class="font-mono text-emerald-400">2026-05-28 12:41 CDT</div>
+                </div>
+                <button onclick="refreshForecast()" 
+                        class="flex items-center gap-x-2 px-4 py-2 rounded-2xl bg-white text-slate-900 hover:bg-amber-300 transition-all active:scale-[0.985] text-sm font-semibold shadow-sm">
+                    <i class="fa-solid fa-sync-alt"></i>
+                    <span>Refresh</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-6 pt-8 pb-12 dashboard-container">
+        
+        <!-- Location & Controls -->
+        <div class="flex flex-wrap items-end justify-between gap-4 mb-6">
+            <div>
+                <div class="section-header mb-1.5">OFFSHORE LOCATION</div>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <!-- Day selector -->
+                    <div class="flex rounded-2xl overflow-hidden border border-cyan-400/30 text-xs mr-2">
+                        <button onclick="selectForecastDay(0)" id="day-0-btn"
+                                class="px-3 py-1 bg-cyan-400 text-slate-900 font-semibold">Today</button>
+                        <button onclick="selectForecastDay(1)" id="day-1-btn"
+                                class="px-3 py-1 hover:bg-cyan-400/10">Tomorrow</button>
+                        <button onclick="selectForecastDay(2)" id="day-2-btn"
+                                class="px-3 py-1 hover:bg-cyan-400/10">+2 Days</button>
+                    </div>
+                    
+                    <button onclick="usePreset(28.15, -94.85, '70nm SE of Freeport')" 
+                            class="px-4 py-1.5 text-xs font-medium rounded-2xl border border-cyan-400/30 hover:bg-cyan-400/10 active:bg-cyan-400/20 transition-colors flex items-center gap-x-1.5">
+                        <i class="fa-solid fa-anchor text-xs"></i>
+                        <span>70nm SE Freeport</span>
+                    </button>
+                    <button onclick="usePreset(28.55, -95.05, '30nm SE of Freeport')" 
+                            class="px-4 py-1.5 text-xs font-medium rounded-2xl border border-cyan-400/30 hover:bg-cyan-400/10 active:bg-cyan-400/20 transition-colors">
+                        30nm SE Freeport
+                    </button>
+                    <button onclick="usePreset(28.8, -94.6, 'Galveston 55nm SE')" 
+                            class="px-4 py-1.5 text-xs font-medium rounded-2xl border border-cyan-400/30 hover:bg-cyan-400/10 active:bg-cyan-400/20 transition-colors">
+                        Galveston 55nm
+                    </button>
+                    
+                    <div class="flex items-center gap-x-2 ml-2 pl-2 border-l border-slate-700">
+                        <div class="flex items-center bg-slate-900 border border-slate-700 rounded-2xl overflow-hidden text-sm">
+                            <input id="lat-input" type="number" step="0.01" value="28.15" 
+                                   class="w-20 bg-transparent px-3 py-1.5 text-right font-mono focus:outline-none">
+                            <div class="px-1.5 text-slate-500">N</div>
+                        </div>
+                        <div class="flex items-center bg-slate-900 border border-slate-700 rounded-2xl overflow-hidden text-sm">
+                            <input id="lon-input" type="number" step="0.01" value="-94.85" 
+                                   class="w-20 bg-transparent px-3 py-1.5 text-right font-mono focus:outline-none">
+                            <div class="px-1.5 text-slate-500">W</div>
+                        </div>
+                        <button onclick="fetchAndUpdateForecast()" 
+                                class="px-5 py-1.5 text-xs font-semibold rounded-2xl bg-cyan-400 hover:bg-cyan-300 active:bg-white transition-all text-slate-900 flex items-center gap-x-2">
+                            <i class="fa-solid fa-cloud-download-alt"></i>
+                            <span class="font-bold">Fetch Forecast</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-x-2 text-xs">
+                <div class="px-3 py-1 rounded-2xl bg-emerald-400/10 text-emerald-400 flex items-center gap-x-1.5">
+                    <i class="fa-solid fa-satellite fa-sm"></i>
+                    <span class="font-medium">Open-Meteo Marine + Forecast</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- LEFT: Comfort Score + Conditions -->
+            <div class="lg:col-span-5 space-y-6">
+                
+                <!-- Comfort Score -->
+                <div class="glass rounded-3xl p-7 border border-cyan-400/10">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <div class="section-header">COMFORT LEVEL</div>
+                            <div class="text-2xl font-semibold tracking-tight">For 70nm Offshore Run</div>
+                        </div>
+                        <div id="comfort-verdict" 
+                             class="status-badge bg-emerald-400 text-emerald-950 font-bold self-start">
+                            GO
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-col items-center justify-center py-3">
+                        <!-- Gauge -->
+                        <div class="relative flex items-center justify-center mb-1" style="width: 190px; height: 190px;">
+                            <div id="comfort-gauge-bg" 
+                                 class="comfort-gauge flex items-center justify-center"
+                                 style="background: conic-gradient(from 180deg at 50% 50%, #22c55e 0deg 120deg, #eab308 120deg 240deg, #ef4444 240deg 360deg);">
+                                <div class="w-[142px] h-[142px] bg-[#0f2942] rounded-full flex items-center justify-center relative z-10">
+                                    <div class="text-center">
+                                        <div id="comfort-score" 
+                                             class="text-[72px] leading-none font-display font-bold tabular-nums text-white tracking-[-4.5px]">87</div>
+                                        <div class="text-[10px] text-cyan-400 font-semibold tracking-[1px] -mt-1">COMFORT</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="comfort-label" 
+                             class="text-center text-lg font-semibold text-emerald-400 tracking-tight">
+                            Excellent conditions • Comfortable ride
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-3 gap-3 text-center text-xs pt-4 border-t border-slate-700">
+                        <div>
+                            <div class="text-emerald-400 font-mono text-lg font-semibold" id="wave-score">92</div>
+                            <div class="text-[10px] text-slate-400">WAVE</div>
+                        </div>
+                        <div>
+                            <div class="text-emerald-400 font-mono text-lg font-semibold" id="wind-score">85</div>
+                            <div class="text-[10px] text-slate-400">WIND</div>
+                        </div>
+                        <div>
+                            <div class="text-emerald-400 font-mono text-lg font-semibold" id="overall-score">87</div>
+                            <div class="text-[10px] text-slate-400">OVERALL</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Marine Conditions -->
+                <div class="glass rounded-3xl p-6 border border-cyan-400/10">
+                    <div class="section-header mb-4 flex items-center justify-between">
+                        <span>MARINE CONDITIONS</span>
+                        <span class="text-[10px] text-slate-500">CURRENT</span>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <!-- Wave -->
+                        <div class="metric-card bg-slate-900/60 rounded-2xl p-4 border border-slate-700">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="flex items-center gap-x-2 text-cyan-400">
+                                    <i class="fa-solid fa-water fa-lg"></i>
+                                    <span class="font-semibold text-sm">Wave Height</span>
+                                </div>
+                            </div>
+                            <div class="flex items-baseline gap-x-1">
+                                <span id="wave-height" class="metric-value data-value text-white">2.8</span>
+                                <span class="text-sm text-slate-400">ft</span>
+                            </div>
+                            <div class="text-[10px] text-slate-400 mt-0.5">Significant wave height</div>
+                        </div>
+                        
+                        <div class="metric-card bg-slate-900/60 rounded-2xl p-4 border border-slate-700">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="flex items-center gap-x-2 text-cyan-400">
+                                    <i class="fa-solid fa-clock fa-lg"></i>
+                                    <span class="font-semibold text-sm">Wave Period</span>
+                                </div>
+                            </div>
+                            <div class="flex items-baseline gap-x-1">
+                                <span id="wave-period" class="metric-value data-value text-white">7.2</span>
+                                <span class="text-sm text-slate-400">s</span>
+                            </div>
+                            <div class="text-[10px] text-slate-400 mt-0.5" id="wave-dir">Dominant • 145° SE</div>
+                        </div>
+                        
+                        <!-- Wind -->
+                        <div class="metric-card bg-slate-900/60 rounded-2xl p-4 border border-slate-700">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="flex items-center gap-x-2 text-amber-400">
+                                    <i class="fa-solid fa-wind fa-lg"></i>
+                                    <span class="font-semibold text-sm">Wind</span>
+                                </div>
+                            </div>
+                            <div class="flex items-baseline gap-x-1">
+                                <span id="wind-speed" class="metric-value data-value text-white">11</span>
+                                <span class="text-sm text-slate-400">kt</span>
+                            </div>
+                            <div class="flex items-center justify-between text-[10px]">
+                                <span class="text-slate-400">Gusts <span id="wind-gust" class="font-mono">14</span> kt</span>
+                                <span id="wind-dir-text" class="font-medium text-amber-300">SE</span>
+                            </div>
+                        </div>
+                        
+                        <div class="metric-card bg-slate-900/60 rounded-2xl p-4 border border-slate-700">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="flex items-center gap-x-2 text-sky-400">
+                                    <i class="fa-solid fa-cloud-sun fa-lg"></i>
+                                    <span class="font-semibold text-sm">Conditions</span>
+                                </div>
+                            </div>
+                            <div class="flex items-baseline gap-x-1">
+                                <span id="air-temp" class="metric-value data-value text-white">68</span>
+                                <span class="text-sm text-slate-400">°F</span>
+                            </div>
+                            <div class="text-[10px] text-slate-400">Visibility <span id="visibility">10</span> nm • <span id="precip-chance">12</span>% rain</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3D VISUALIZATION -->
+            <div class="lg:col-span-7">
+                <div class="glass rounded-3xl p-5 border border-cyan-400/10 h-full flex flex-col">
+                    <div class="flex items-center justify-between mb-3 px-1">
+                        <div>
+                            <div class="section-header">3D PITCHING PERFORMANCE SIMULATOR</div>
+                            <div class="text-xs text-slate-400">Wave &amp; wind driven • See perceived pitching motion on your World Cat 325</div>
+                        </div>
+                        
+                        <div class="flex items-center gap-x-1.5">
+                            <button onclick="toggleAnimation()" id="play-btn"
+                                    class="px-3 py-1 text-xs font-semibold rounded-xl bg-white/10 hover:bg-white/20 flex items-center gap-x-1.5 transition-colors">
+                                <i class="fa-solid fa-pause fa-sm" id="play-icon"></i>
+                                <span id="play-text">PAUSE</span>
+                            </button>
+                            
+                            <div class="flex rounded-xl overflow-hidden border border-white/10 text-xs">
+                                <button onclick="setCameraView('side')" class="px-3 py-1 hover:bg-white/10 transition-colors">SIDE</button>
+                                <button onclick="setCameraView('stern')" class="px-3 py-1 hover:bg-white/10 transition-colors border-l border-white/10">STERN</button>
+                                <button onclick="setCameraView('top')" class="px-3 py-1 hover:bg-white/10 transition-colors border-l border-white/10">TOP</button>
+                            </div>
+                            
+                            <button onclick="sync3DToForecast()" 
+                                    class="px-3 py-1 text-xs font-semibold rounded-xl bg-cyan-400/90 hover:bg-cyan-400 text-slate-900 flex items-center gap-x-1.5 transition-all">
+                                <i class="fa-solid fa-sync fa-sm"></i>
+                                <span>SYNC</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Three.js Container -->
+                    <div id="three-container" class="three-container flex-1 min-h-[380px] relative">
+                        <canvas id="three-canvas" class="three-canvas"></canvas>
+                        
+                        <!-- 3D HUD Overlay -->
+                        <div class="absolute top-4 left-4 bg-black/60 text-[10px] px-3 py-1 rounded-2xl font-mono flex items-center gap-x-3 border border-white/10">
+                            <div class="flex items-center">
+                                <span class="text-emerald-400">WAVE</span> 
+                                <span id="viz-wave-h" class="ml-1.5 font-semibold text-white">2.8</span>
+                                <span class="text-white/50 ml-0.5">ft</span>
+                            </div>
+                            <div class="w-px h-3 bg-white/20"></div>
+                            <div class="flex items-center">
+                                <span class="text-amber-400">PITCH</span> 
+                                <span id="viz-pitch" class="ml-1.5 font-semibold text-white tabular-nums">+1.4°</span>
+                            </div>
+                            <div class="w-px h-3 bg-white/20"></div>
+                            <div>
+                                <span id="viz-status" class="text-emerald-400 font-semibold">COMFORTABLE</span>
+                            </div>
+                        </div>
+                        
+                        <div class="absolute bottom-4 right-4 text-[10px] px-2.5 py-px rounded bg-black/50 text-cyan-300/70 font-mono tracking-widest">
+                            DRAG TO ORBIT • SCROLL TO ZOOM
+                        </div>
+                    </div>
+                    
+                    <!-- Recommended Comfort Speed (High-Tech) -->
+                    <div class="mt-3 px-1">
+                        <div class="flex items-center justify-between text-xs mb-1.5">
+                            <div class="font-semibold text-cyan-400 flex items-center gap-x-2">
+                                <i class="fa-solid fa-tachometer-alt"></i>
+                                <span>RECOMMENDED MAX COMFORT SPEED</span>
+                            </div>
+                            <span class="text-[10px] text-slate-400">for 70nm run</span>
+                        </div>
+                        
+                        <div class="flex items-end gap-x-3">
+                            <div class="font-mono">
+                                <span id="comfort-speed" class="text-5xl font-bold tracking-tighter text-white">26</span>
+                                <span class="text-xl text-cyan-400 font-semibold">kts</span>
+                            </div>
+                            <div class="text-xs pb-1 text-slate-400">
+                                <div id="speed-label" class="font-medium">Smooth &amp; efficient</div>
+                                <div class="text-[10px]">Based on current wave state</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Simulation Sliders -->
+                    <div class="mt-4 pt-4 border-t border-slate-700">
+                        <div class="flex items-center justify-between text-xs mb-2 px-1">
+                            <div class="font-semibold text-cyan-400 flex items-center gap-x-1.5">
+                                <i class="fa-solid fa-sliders-h"></i> 
+                                <span>MANUAL SIMULATION</span>
+                            </div>
+                            <button onclick="resetSlidersToForecast()" 
+                                    class="text-[10px] text-cyan-400 hover:text-white transition-colors">RESET TO FORECAST</button>
+                        </div>
+                        
+                        <div class="grid grid-cols-3 gap-x-4 gap-y-3 text-xs">
+                            <div>
+                                <div class="flex justify-between text-slate-400 mb-1 px-0.5">
+                                    <span>Wave Height</span>
+                                    <span id="slider-wave-val" class="font-mono text-white">2.8 ft</span>
+                                </div>
+                                <input type="range" id="slider-wave" min="0.5" max="12" step="0.1" value="2.8"
+                                       class="w-full accent-cyan-400" oninput="updateSimulationFromSliders()">
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-slate-400 mb-1 px-0.5">
+                                    <span>Wave Period</span>
+                                    <span id="slider-period-val" class="font-mono text-white">7.2 s</span>
+                                </div>
+                                <input type="range" id="slider-period" min="3" max="14" step="0.2" value="7.2"
+                                       class="w-full accent-cyan-400" oninput="updateSimulationFromSliders()">
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-slate-400 mb-1 px-0.5">
+                                    <span>Wind Speed</span>
+                                    <span id="slider-wind-val" class="font-mono text-white">11 kt</span>
+                                </div>
+                                <input type="range" id="slider-wind" min="0" max="35" step="1" value="11"
+                                       class="w-full accent-amber-400" oninput="updateSimulationFromSliders()">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recommendations -->
+            <div class="lg:col-span-12">
+                <div class="glass rounded-3xl p-6 border border-cyan-400/10">
+                    <div class="flex items-center gap-x-3 mb-4">
+                        <i class="fa-solid fa-lightbulb text-amber-400 fa-lg"></i>
+                        <div class="font-semibold tracking-tight text-lg">Trip Recommendations &amp; Insights</div>
+                    </div>
+                    
+                    <div id="recommendations-content" class="grid md:grid-cols-3 gap-5 text-sm">
+                        <!-- Populated by JS -->
+                        <div class="md:col-span-2">
+                            <div id="advice-text" class="text-slate-300 leading-relaxed">
+                                Current conditions look excellent for a 70nm run. Moderate seas with a comfortable period should give your World Cat a smooth, stable ride. 
+                                Expect gentle pitching. Great day to target offshore structure.
+                            </div>
+                            
+                            <div class="mt-3 flex flex-wrap gap-2" id="tips-list">
+                                <!-- JS injected tips -->
+                            </div>
+                        </div>
+                        
+                        <div class="bg-slate-900/70 rounded-2xl p-4 text-xs border border-slate-700">
+                            <div class="uppercase tracking-widest text-[10px] text-amber-400 mb-2 font-semibold">CAPTAIN'S NOTES</div>
+                            <ul class="space-y-1.5 text-slate-300">
+                                <li class="flex gap-x-2"><span class="text-emerald-400">•</span> <span>70nm is very doable on the 325CC with current fuel/range.</span></li>
+                                <li class="flex gap-x-2"><span class="text-emerald-400">•</span> <span>Consider Seakeeper Ride if installed for even better motion control.</span></li>
+                                <li class="flex gap-x-2"><span class="text-emerald-400">•</span> <span>Monitor for building afternoon winds common in the Gulf.</span></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+        
+        <!-- Hourly Chart -->
+        <div class="mt-6 glass rounded-3xl p-6 border border-cyan-400/10">
+            <div class="flex items-baseline justify-between mb-4">
+                <div>
+                    <span class="section-header">TODAY'S WAVE TREND</span>
+                    <span class="ml-2 text-xs text-slate-400">(Hourly forecast)</span>
+                </div>
+                <div class="text-xs text-slate-400">Data updates automatically on refresh</div>
+            </div>
+            <div class="h-48">
+                <canvas id="wave-chart"></canvas>
+            </div>
+        </div>
+        
+        <div class="mt-6 text-center">
+            <p class="text-[10px] text-slate-500 max-w-md mx-auto">
+                This is a decision-support tool only. Always verify marine forecasts with NOAA, NWS, and your own observations. 
+                Captain's discretion is final. Boat specs and conditions can vary. 
+                <span class="text-cyan-400/70">Made for your World Cat adventures • May 28, 2026</span>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Tailwind script
+        function initTailwind() {
+            document.documentElement.style.setProperty('--accent-cyan', '#22d3ee');
+        }
+        
+        // Global state
+        let scene, camera, renderer;
+        let boat, seaMesh;
+        let animationFrame;
+        let isAnimating = true;
+        let currentWaveHeight = 2.8;
+        let currentWavePeriod = 7.2;
+        let currentWindSpeed = 11;
+        let currentForecastData = null;
+        let waveChart = null;
+        let isDragging = false;
+        let previousMouseX = 0;
+        let previousMouseY = 0;
+        let cameraAzimuth = 2.8;
+        let cameraElevation = 0.6;
+        let cameraDistance = 26;
+        
+        // Default location
+        let currentLat = 28.15;
+        let currentLon = -94.85;
+        let fullMarineData = null;
+        let fullWeatherData = null;
+        let currentDayOffset = 0;
+        
+        function initThreeJS() {
+            const container = document.getElementById('three-container');
+            const canvas = document.getElementById('three-canvas');
+            
+            renderer = new THREE.WebGLRenderer({ 
+                canvas: canvas, 
+                antialias: true, 
+                alpha: true,
+                powerPreference: "high-performance"
+            });
+            
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.shadowMap.enabled = true;
+            
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x0a1625, 0.012);
+            
+            // Camera
+            camera = new THREE.PerspectiveCamera(52, container.clientWidth / container.clientHeight, 0.5, 300);
+            updateCameraPosition();
+            
+            // Lights
+            const hemiLight = new THREE.HemisphereLight(0x9fd4ff, 0x1a3a4a, 0.6);
+            scene.add(hemiLight);
+            
+            const dirLight = new THREE.DirectionalLight(0xfff8e7, 1.1);
+            dirLight.position.set(25, 45, 15);
+            dirLight.castShadow = true;
+            dirLight.shadow.mapSize.width = 1024;
+            dirLight.shadow.mapSize.height = 1024;
+            scene.add(dirLight);
+            
+            const ambient = new THREE.AmbientLight(0x334455, 0.35);
+            scene.add(ambient);
+            
+            // Create sea
+            createSea();
+            
+            // Create boat
+            createBoat();
+            
+            // Add some distant horizon haze / simple environment
+            const horizonGeo = new THREE.PlaneGeometry(180, 180);
+            const horizonMat = new THREE.MeshLambertMaterial({
+                color: 0x1e3a5f,
+                transparent: true,
+                opacity: 0.35,
+                flatShading: true
+            });
+            const horizon = new THREE.Mesh(horizonGeo, horizonMat);
+            horizon.rotation.x = -Math.PI * 0.5;
+            horizon.position.y = -1.5;
+            scene.add(horizon);
+            
+            // Mouse controls for orbit
+            setupMouseControls(canvas);
+            
+            // Handle resize
+            window.addEventListener('resize', () => {
+                const w = container.clientWidth;
+                const h = container.clientHeight;
+                camera.aspect = w / h;
+                camera.updateProjectionMatrix();
+                renderer.setSize(w, h);
+            });
+            
+            // Start animation loop
+            animate();
+            
+            // Initial gentle motion
+            setTimeout(() => {
+                if (boat) {
+                    boat.position.y = 0.4;
+                }
+            }, 600);
+        }
+        
+        function setupMouseControls(canvas) {
+            canvas.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                previousMouseX = e.clientX;
+                previousMouseY = e.clientY;
+            });
+            
+            window.addEventListener('mouseup', () => {
+                isDragging = false;
+            });
+            
+            window.addEventListener('mousemove', (e) => {
+                if (!isDragging || !camera) return;
+                
+                const deltaX = e.clientX - previousMouseX;
+                const deltaY = e.clientY - previousMouseY;
+                
+                cameraAzimuth -= deltaX * 0.0045;
+                cameraElevation = Math.max(0.15, Math.min(1.35, cameraElevation - deltaY * 0.004));
+                
+                updateCameraPosition();
+                
+                previousMouseX = e.clientX;
+                previousMouseY = e.clientY;
+            });
+            
+            canvas.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                cameraDistance = Math.max(12, Math.min(55, cameraDistance + e.deltaY * 0.035));
+                updateCameraPosition();
+            }, { passive: false });
+            
+            // Double click to reset view
+            canvas.addEventListener('dblclick', () => {
+                cameraAzimuth = 2.8;
+                cameraElevation = 0.6;
+                cameraDistance = 26;
+                updateCameraPosition();
+            });
+        }
+        
+        function updateCameraPosition() {
+            if (!camera) return;
+            const x = Math.cos(cameraAzimuth) * Math.cos(cameraElevation) * cameraDistance;
+            const y = Math.sin(cameraElevation) * cameraDistance * 0.9 + 3;
+            const z = Math.sin(cameraAzimuth) * Math.cos(cameraElevation) * cameraDistance;
+            
+            camera.position.set(x, y, z);
+            camera.lookAt(0, 2.5, 0);
+        }
+        
+        function setCameraView(view) {
+            if (!camera) return;
+            
+            if (view === 'side') {
+                cameraAzimuth = 2.8;
+                cameraElevation = 0.55;
+                cameraDistance = 24;
+            } else if (view === 'stern') {
+                cameraAzimuth = 4.0;
+                cameraElevation = 0.35;
+                cameraDistance = 19;
+            } else if (view === 'top') {
+                cameraAzimuth = 2.5;
+                cameraElevation = 1.25;
+                cameraDistance = 22;
+            }
+            updateCameraPosition();
+        }
+        
+        function createSea() {
+            const geometry = new THREE.PlaneGeometry(95, 95, 72, 72);
+            const material = new THREE.MeshPhongMaterial({
+                color: 0x0a2f4a,      // Deeper ocean blue
+                shininess: 38,
+                specular: 0x335577,
+                flatShading: false,
+                polygonOffset: true,
+                polygonOffsetFactor: 1,
+                polygonOffsetUnits: 1
+            });
+            
+            seaMesh = new THREE.Mesh(geometry, material);
+            seaMesh.rotation.x = -Math.PI * 0.5;
+            seaMesh.position.y = -0.6;
+            seaMesh.receiveShadow = true;
+            scene.add(seaMesh);
+            
+            // Store original positions for animation
+            seaMesh.userData = { originalPositions: geometry.attributes.position.array.slice() };
+        }
+        
+        function createBoat() {
+            boat = new THREE.Group();
+            boat.castShadow = true;
+            boat.receiveShadow = true;
+            // Stylized but recognizable 2024/2025 World Cat 325 CC - Navy hull, white T-top & accents, modern center console catamaran proportions
+            
+            // High-tech modern colors: Navy blue hull + white T-top & accents (World Cat 325 CC)
+            const hullMat = new THREE.MeshPhongMaterial({ 
+                color: 0x0a2540,      // Deep navy blue hull
+                shininess: 42,
+                specular: 0x445566,
+                flatShading: false
+            });
+            const accentMat = new THREE.MeshPhongMaterial({ color: 0x1e40af, shininess: 55 });
+            const darkMat = new THREE.MeshPhongMaterial({ color: 0x1e2937, shininess: 18 });
+            const consoleMat = new THREE.MeshPhongMaterial({ color: 0x475569, shininess: 30 });
+            const whiteMat = new THREE.MeshPhongMaterial({ 
+                color: 0xf8fafc,      // Clean white for T-top, console top, interiors
+                shininess: 28,
+                specular: 0xaaaaaa
+            });
+            
+            // === Twin Hulls (more realistic 325 CC proportions) ===
+            const hullLength = 12.2;
+            const hullWidth = 1.55;
+            const hullHeight = 1.25;
+            const hullSeparation = 4.0;
+            
+            // Port hull
+            const hullPort = new THREE.Mesh(
+                new THREE.BoxGeometry(hullLength, hullHeight, hullWidth), 
+                hullMat
+            );
+            hullPort.position.set(0, 0.9, -hullSeparation / 2);
+            hullPort.castShadow = true;
+            boat.add(hullPort);
+            
+            // Starboard hull
+            const hullStar = hullPort.clone();
+            hullStar.position.z = hullSeparation / 2;
+            boat.add(hullStar);
+            
+            // Slight bow rise on hulls (simple visual)
+            const bowRise = new THREE.Mesh(
+                new THREE.BoxGeometry(2.8, 0.9, hullWidth * 0.95), 
+                hullMat
+            );
+            bowRise.position.set(4.8, 1.15, -hullSeparation / 2);
+            boat.add(bowRise);
+            
+            const bowRise2 = bowRise.clone();
+            bowRise2.position.z = hullSeparation / 2;
+            boat.add(bowRise2);
+            
+            // === Connecting Deck (light tech look) ===
+            const deck = new THREE.Mesh(
+                new THREE.BoxGeometry(9.8, 0.45, 5.6), 
+                new THREE.MeshPhongMaterial({ color: 0xe0e7ff, shininess: 22 })
+            );
+            deck.position.set(0.3, 1.55, 0);
+            deck.castShadow = true;
+            boat.add(deck);
+            
+            // Deck accent stripe (navy accent)
+            const stripe = new THREE.Mesh(
+                new THREE.BoxGeometry(9.8, 0.08, 5.65), 
+                accentMat
+            );
+            stripe.position.set(0.3, 1.78, 0);
+            boat.add(stripe);
+            
+            // === Center Console ===
+            const consoleBase = new THREE.Mesh(
+                new THREE.BoxGeometry(2.4, 1.6, 2.1), 
+                consoleMat
+            );
+            consoleBase.position.set(-1.2, 2.55, 0);
+            consoleBase.castShadow = true;
+            boat.add(consoleBase);
+            
+            // Windshield / console top
+            const windshield = new THREE.Mesh(
+                new THREE.BoxGeometry(1.1, 1.0, 2.0), 
+                new THREE.MeshPhongMaterial({ color: 0x1e3a5f, transparent: true, opacity: 0.65 })
+            );
+            windshield.position.set(-2.4, 3.3, 0);
+            boat.add(windshield);
+            
+            // T-Top frame (white/high-tech look)
+            // Left post
+            const postL = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 2.1, 6), whiteMat);
+            postL.position.set(-1.0, 4.0, -1.1);
+            boat.add(postL);
+            // Right post
+            const postR = postL.clone();
+            postR.position.z = 1.1;
+            boat.add(postR);
+            
+            // T-Top roof (white)
+            const tTopRoof = new THREE.Mesh(
+                new THREE.BoxGeometry(2.6, 0.12, 2.8), 
+                whiteMat
+            );
+            tTopRoof.position.set(-1.0, 5.05, 0);
+            boat.add(tTopRoof);
+            
+            // === Outboards (twin) ===
+            const engineMat = new THREE.MeshPhongMaterial({ color: 0x1f2937 });
+            const engineL = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.4, 0.85), engineMat);
+            engineL.position.set(-5.6, 0.6, -1.0);
+            boat.add(engineL);
+            
+            const engineR = engineL.clone();
+            engineR.position.z = 1.0;
+            boat.add(engineR);
+            
+            // Props (simple disks)
+            const propMat = new THREE.MeshPhongMaterial({ color: 0x64748b });
+            const propL = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.12, 12), propMat);
+            propL.rotation.z = Math.PI / 2;
+            propL.position.set(-6.1, 0.35, -1.0);
+            boat.add(propL);
+            
+            const propR = propL.clone();
+            propR.position.z = 1.0;
+            boat.add(propR);
+            
+            // === Extras: Leaning post / bolster (white/high-tech) ===
+            const bolster = new THREE.Mesh(
+                new THREE.BoxGeometry(1.3, 0.7, 1.6), 
+                whiteMat
+            );
+            bolster.position.set(1.8, 2.1, 0);
+            boat.add(bolster);
+            
+            // Small rails / detail
+            const railMat = new THREE.MeshPhongMaterial({ color: 0x94a3b8 });
+            for (let side of [-1, 1]) {
+                const rail = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 3.8, 5), railMat);
+                rail.position.set(1.5, 2.35, side * 2.6);
+                boat.add(rail);
+            }
+            
+            // Position & scale boat nicely in scene
+            boat.scale.set(0.95, 0.95, 0.95);
+            boat.position.set(0, 0.8, 0);
+            boat.rotation.y = 0.35; // nice 3/4 angle initially
+            
+            scene.add(boat);
+            
+            // Store reference for animation
+            boat.userData.originalY = boat.position.y;
+        }
+        
+        function animate() {
+            animationFrame = requestAnimationFrame(animate);
+            
+            if (!seaMesh || !boat || !isAnimating) {
+                if (renderer && scene && camera) renderer.render(scene, camera);
+                return;
+            }
+            
+            const time = Date.now() * 0.0015;
+            const waveAmp = currentWaveHeight * 0.22;   // stronger visual scale from real forecast
+            const waveFreq = Math.max(0.55, 9.8 / currentWavePeriod);
+            
+            // === Animate Sea - Much more realistic multi-layer ocean waves ===
+            const positions = seaMesh.geometry.attributes.position;
+            const orig = seaMesh.userData.originalPositions;
+            
+            for (let i = 0; i < positions.count; i++) {
+                const ix = i * 3;
+                const x = orig[ix];
+                const z = orig[ix + 2];
+                
+                let y = 0;
+                
+                // Layer 1: Primary long swell (main energy)
+                y += Math.sin(x * 0.38 + z * 0.12 + time * waveFreq * 0.95) * waveAmp * 1.0;
+                
+                // Layer 2: Secondary swell (crossing direction)
+                y += Math.sin(x * 0.21 + z * 0.47 + time * waveFreq * 0.72) * waveAmp * 0.65;
+                
+                // Layer 3: Wind chop / shorter waves
+                y += Math.sin(x * 0.85 + z * 0.65 + time * waveFreq * 1.65) * waveAmp * 0.38;
+                
+                // Layer 4: Fine detail / surface texture
+                y += Math.sin(x * 1.6 + z * 1.1 + time * waveFreq * 2.8) * waveAmp * 0.18;
+                
+                // Extra chop when forecast shows bigger seas
+                if (currentWaveHeight > 4.0) {
+                    y += Math.sin(x * 2.3 + z * 1.8 + time * 4.2) * (currentWaveHeight - 3.5) * 0.028;
+                }
+                
+                // Crest brightening effect (simple "actual wave" look)
+                if (currentWaveHeight > 3.2 && y > waveAmp * 0.55) {
+                    // We'll handle color separately via material if needed; for now just slight extra height on crests
+                    y += 0.04;
+                }
+                
+                positions.setY(i, y);
+            }
+            positions.needsUpdate = true;
+            
+            // === Animate Boat - Better synced with the new multi-layer wave field ===
+            const boatWaveY = Math.sin(time * waveFreq * 0.92) * waveAmp * 0.72 + 
+                             Math.sin(time * waveFreq * 0.68) * waveAmp * 0.35;
+            
+            boat.position.y = boat.userData.originalY + boatWaveY * 0.78;
+            
+            // Pitch (fore-aft) - driven by the dominant swell
+            const pitchAmplitude = currentWaveHeight * 0.026 + (currentWavePeriod < 6.2 ? 0.09 : 0);
+            const pitch = Math.sin(time * waveFreq * 0.78 + 0.5) * pitchAmplitude;
+            
+            // Roll (side to side) - cats are more stable here
+            const roll = Math.sin(time * waveFreq * 1.15 + 1.2) * (currentWaveHeight * 0.008);
+            
+            boat.rotation.x = pitch;           // Nose up/down
+            boat.rotation.z = roll * 1.1;      // Lean
+            
+            // Gentle heading sway
+            boat.rotation.y = 0.35 + Math.sin(time * 0.2) * 0.025;
+            
+            // Update HUD
+            const vizWave = document.getElementById('viz-wave-h');
+            if (vizWave) vizWave.textContent = currentWaveHeight.toFixed(1);
+            
+            // Live perceived pitch angle (in degrees)
+            const vizPitch = document.getElementById('viz-pitch');
+            if (vizPitch) {
+                const pitchDeg = (pitch * 57.3).toFixed(1); // radians to degrees
+                const sign = pitch >= 0 ? '+' : '';
+                vizPitch.textContent = `${sign}${pitchDeg}°`;
+                // Color code the pitch readout
+                if (Math.abs(pitch) > 0.12) {
+                    vizPitch.style.color = '#f87171';
+                } else if (Math.abs(pitch) > 0.06) {
+                    vizPitch.style.color = '#facc15';
+                } else {
+                    vizPitch.style.color = '#4ade80';
+                }
+            }
+            
+            const vizStatus = document.getElementById('viz-status');
+            if (vizStatus) {
+                if (currentWaveHeight < 3.5) {
+                    vizStatus.textContent = 'COMFORTABLE';
+                    vizStatus.style.color = '#4ade80';
+                } else if (currentWaveHeight < 5.5) {
+                    vizStatus.textContent = 'MODERATE';
+                    vizStatus.style.color = '#facc15';
+                } else {
+                    vizStatus.textContent = 'CHALLENGING';
+                    vizStatus.style.color = '#f87171';
+                }
+            }
+            
+            renderer.render(scene, camera);
+        }
+        
+        function toggleAnimation() {
+            isAnimating = !isAnimating;
+            const btn = document.getElementById('play-btn');
+            const icon = document.getElementById('play-icon');
+            const text = document.getElementById('play-text');
+            
+            if (isAnimating) {
+                icon.classList.remove('fa-play');
+                icon.classList.add('fa-pause');
+                text.textContent = 'PAUSE';
+                btn.classList.add('bg-white/10');
+            } else {
+                icon.classList.remove('fa-pause');
+                icon.classList.add('fa-play');
+                text.textContent = 'PLAY';
+                btn.classList.remove('bg-white/10');
+            }
+        }
+        
+        function updateSimulationFromSliders() {
+            const waveSlider = parseFloat(document.getElementById('slider-wave').value);
+            const periodSlider = parseFloat(document.getElementById('slider-period').value);
+            const windSlider = parseFloat(document.getElementById('slider-wind').value);
+            
+            currentWaveHeight = waveSlider;
+            currentWavePeriod = periodSlider;
+            currentWindSpeed = windSlider;
+            
+            // Update labels
+            document.getElementById('slider-wave-val').textContent = waveSlider.toFixed(1) + ' ft';
+            document.getElementById('slider-period-val').textContent = periodSlider.toFixed(1) + ' s';
+            document.getElementById('slider-wind-val').textContent = Math.round(windSlider) + ' kt';
+            
+            // Recompute comfort from sliders (manual mode)
+            const scoreData = calculateComfortScore(waveSlider, periodSlider, windSlider);
+            updateComfortUI(scoreData);
+            
+            // Update viz labels
+            const vizWave = document.getElementById('viz-wave-h');
+            if (vizWave) vizWave.textContent = waveSlider.toFixed(1);
+            
+            // Update recommended comfort speed
+            updateRecommendedSpeed(waveSlider, periodSlider);
+        }
+        
+        function resetSlidersToForecast() {
+            if (!currentForecastData) {
+                // fallback defaults
+                document.getElementById('slider-wave').value = 2.8;
+                document.getElementById('slider-period').value = 7.2;
+                document.getElementById('slider-wind').value = 11;
+            } else {
+                const w = currentForecastData.waveHeight || 2.8;
+                const p = currentForecastData.wavePeriod || 7.2;
+                const wind = currentForecastData.windSpeed || 11;
+                
+                document.getElementById('slider-wave').value = w;
+                document.getElementById('slider-period').value = p;
+                document.getElementById('slider-wind').value = wind;
+            }
+            updateSimulationFromSliders();
+        }
+        
+        function sync3DToForecast() {
+            if (!currentForecastData) {
+                alert("No forecast loaded yet. Click 'Fetch Forecast' first.");
+                return;
+            }
+            
+            currentWaveHeight = currentForecastData.waveHeight || 2.8;
+            currentWavePeriod = currentForecastData.wavePeriod || 7.2;
+            currentWindSpeed = currentForecastData.windSpeed || 11;
+            
+            // Update sliders
+            document.getElementById('slider-wave').value = currentWaveHeight;
+            document.getElementById('slider-period').value = currentWavePeriod;
+            document.getElementById('slider-wind').value = currentWindSpeed;
+            
+            document.getElementById('slider-wave-val').textContent = currentWaveHeight.toFixed(1) + ' ft';
+            document.getElementById('slider-period-val').textContent = currentWavePeriod.toFixed(1) + ' s';
+            document.getElementById('slider-wind-val').textContent = Math.round(currentWindSpeed) + ' kt';
+            
+            // Update score
+            const scoreData = calculateComfortScore(currentWaveHeight, currentWavePeriod, currentWindSpeed);
+            updateComfortUI(scoreData);
+            
+            // Brief visual feedback
+            const container = document.getElementById('three-container');
+            container.style.transitionDuration = '80ms';
+            container.style.boxShadow = '0 0 0 3px rgba(103, 232, 249, 0.5)';
+            setTimeout(() => {
+                container.style.boxShadow = '0 25px 50px -12px rgb(0 0 0 / 0.4)';
+            }, 650);
+        }
+        
+        function calculateComfortScore(waveH, waveP, windKts) {
+            // Tuned for World Cat 325 CC catamaran - stable platform
+            let score = 68; // base for capable offshore cat
+            
+            // Wave height scoring (most important)
+            if (waveH <= 2.0) score += 22;
+            else if (waveH <= 3.2) score += 14;
+            else if (waveH <= 4.5) score += 5;
+            else if (waveH <= 5.8) score -= 12;
+            else if (waveH <= 7.5) score -= 26;
+            else score -= 42;
+            
+            // Wave period (longer = more comfortable ride)
+            if (waveP >= 8.5) score += 12;
+            else if (waveP >= 7.0) score += 6;
+            else if (waveP >= 5.5) score -= 4;
+            else score -= 14;
+            
+            // Wind
+            if (windKts <= 8) score += 10;
+            else if (windKts <= 13) score += 4;
+            else if (windKts <= 17) score -= 6;
+            else if (windKts <= 22) score -= 16;
+            else score -= 28;
+            
+            // Clamp
+            score = Math.max(18, Math.min(98, Math.round(score)));
+            
+            let level, color, verdict, advice;
+            
+            if (score >= 78) {
+                level = "Excellent";
+                color = "#22c55e";
+                verdict = "GO";
+                advice = "Very comfortable conditions for the 70nm run. Your World Cat should feel stable and predictable. Great day to go offshore.";
+            } else if (score >= 62) {
+                level = "Good";
+                color = "#4ade80";
+                verdict = "GO";
+                advice = "Solid conditions overall. Moderate motion expected but very manageable on the 325CC. Keep an eye on building seas later in the day.";
+            } else if (score >= 48) {
+                level = "Moderate";
+                color = "#eab308";
+                verdict = "CAUTION";
+                advice = "Conditions are acceptable but you may see some sporty motion, especially on the return. Consider a slightly earlier start or shorter day if winds build.";
+            } else {
+                level = "Challenging";
+                color = "#ef4444";
+                verdict = "NO-GO / DELAY";
+                advice = "Seas and/or wind are getting into the range where long runs become less comfortable. Strongly consider waiting for a better window or shortening the trip significantly.";
+            }
+            
+            return { score, level, color, verdict, advice, waveH, waveP, windKts };
+        }
+        
+        // Recommended fastest comfortable speed for the World Cat 325 CC
+        function getRecommendedComfortSpeed(waveH, waveP) {
+            let speed = 33; // base max comfortable in calm conditions
+            
+            // Reduce with wave height
+            if (waveH > 2.5) speed -= (waveH - 2.5) * 3.2;
+            if (waveH > 4.5) speed -= (waveH - 4.5) * 2.5;
+            
+            // Reduce with short/steep period (more uncomfortable)
+            if (waveP < 7.5) speed -= (7.5 - waveP) * 1.8;
+            
+            // Clamp to realistic range for this boat on longer runs
+            speed = Math.max(15, Math.min(36, Math.round(speed)));
+            return speed;
+        }
+        
+        function updateRecommendedSpeed(waveH, waveP) {
+            const speed = getRecommendedComfortSpeed(waveH, waveP);
+            const el = document.getElementById('comfort-speed');
+            if (el) el.textContent = speed;
+            
+            // Dynamic label
+            const label = document.getElementById('speed-label');
+            if (label) {
+                if (speed >= 30) {
+                    label.textContent = "Excellent — push it comfortably";
+                    label.style.color = "#4ade80";
+                } else if (speed >= 24) {
+                    label.textContent = "Smooth & efficient";
+                    label.style.color = "#67e8f9";
+                } else if (speed >= 18) {
+                    label.textContent = "Moderate — watch conditions";
+                    label.style.color = "#facc15";
+                } else {
+                    label.textContent = "Conservative — prioritize comfort";
+                    label.style.color = "#f87171";
+                }
+            }
+        }
+        
+        function updateComfortUI(data) {
+            // Main score
+            const scoreEl = document.getElementById('comfort-score');
+            scoreEl.textContent = data.score;
+            scoreEl.style.color = data.color;
+            
+            // Gauge background (simplified visual)
+            const gauge = document.getElementById('comfort-gauge-bg');
+            let gradientStop;
+            if (data.score >= 78) gradientStop = 115;
+            else if (data.score >= 62) gradientStop = 155;
+            else if (data.score >= 48) gradientStop = 200;
+            else gradientStop = 260;
+            
+            gauge.style.background = `conic-gradient(from 180deg at 50% 50%, #22c55e 0deg ${gradientStop}deg, #eab308 ${gradientStop}deg 240deg, #ef4444 240deg 360deg)`;
+            
+            // Label
+            document.getElementById('comfort-label').innerHTML = 
+                `<span style="color: ${data.color}">${data.level}</span> • ${data.advice.split('.')[0]}.`;
+            
+            // Verdict badge
+            const verdictEl = document.getElementById('comfort-verdict');
+            verdictEl.textContent = data.verdict;
+            verdictEl.className = `status-badge font-bold ${data.verdict === 'GO' ? 'bg-emerald-400 text-emerald-950' : data.verdict.includes('CAUTION') ? 'bg-yellow-400 text-yellow-950' : 'bg-red-500 text-white'}`;
+            
+            // Sub scores (approximate)
+            const waveSub = Math.max(35, Math.min(96, Math.round(88 - (data.waveH - 2.5) * 7.5)));
+            const windSub = Math.max(30, Math.min(95, Math.round(82 - (data.windKts - 9) * 2.8)));
+            
+            document.getElementById('wave-score').textContent = waveSub;
+            document.getElementById('wind-score').textContent = windSub;
+            document.getElementById('overall-score').textContent = data.score;
+            
+            // Update advice text
+            document.getElementById('advice-text').innerHTML = data.advice;
+            
+            // Dynamic tips
+            updateTips(data);
+        }
+        
+        function updateTips(data) {
+            const container = document.getElementById('tips-list');
+            container.innerHTML = '';
+            
+            const tips = [];
+            
+            if (data.waveH > 4.5) {
+                tips.push('<span class="inline-flex items-center px-3 py-1 rounded-2xl bg-orange-400/10 text-orange-300 text-xs font-medium"><i class="fa-solid fa-exclamation-triangle mr-1.5"></i>Monitor for set &amp; drift on the return leg</span>');
+            }
+            if (data.score > 75) {
+                tips.push('<span class="inline-flex items-center px-3 py-1 rounded-2xl bg-emerald-400/10 text-emerald-300 text-xs font-medium"><i class="fa-solid fa-check mr-1.5"></i>Excellent window for 70nm+ offshore</span>');
+            }
+            if (data.waveP < 6) {
+                tips.push('<span class="inline-flex items-center px-3 py-1 rounded-2xl bg-amber-400/10 text-amber-300 text-xs font-medium"><i class="fa-solid fa-clock mr-1.5"></i>Short period — expect more vertical motion</span>');
+            }
+            if (data.windKts > 15) {
+                tips.push('<span class="inline-flex items-center px-3 py-1 rounded-2xl bg-amber-400/10 text-amber-300 text-xs font-medium"><i class="fa-solid fa-wind mr-1.5"></i>Watch for higher gusts this afternoon</span>');
+            }
+            
+            // Always add a couple
+            if (tips.length < 2) {
+                tips.push('<span class="inline-flex items-center px-3 py-1 rounded-2xl bg-sky-400/10 text-sky-300 text-xs font-medium"><i class="fa-solid fa-ship mr-1.5"></i>World Cat 325 handles these conditions well</span>');
+            }
+            
+            tips.forEach(t => {
+                const el = document.createElement('div');
+                el.innerHTML = t;
+                container.appendChild(el.firstChild);
+            });
+        }
+        
+        async function fetchMarineAndWeather(lat, lon) {
+            const marineUrl = `https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}&current=wave_height,wave_period,wave_direction&hourly=wave_height,wave_period,wave_direction&timezone=America/Chicago&forecast_days=3`;
+            
+            const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation_probability,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m,visibility&hourly=temperature_2m,wind_speed_10m,wave_height&timezone=America/Chicago&forecast_days=3`;
+            
+            const [marineRes, weatherRes] = await Promise.all([
+                fetch(marineUrl),
+                fetch(weatherUrl)
+            ]);
+            
+            if (!marineRes.ok || !weatherRes.ok) {
+                throw new Error('Failed to fetch forecast data');
+            }
+            
+            const marineData = await marineRes.json();
+            const weatherData = await weatherRes.json();
+            
+            // Parse current values (convert m to ft where needed)
+            const waveH_m = marineData.current?.wave_height ?? 0.9;
+            const waveH_ft = parseFloat((waveH_m * 3.28084).toFixed(1));
+            const waveP = parseFloat((marineData.current?.wave_period ?? 6.5).toFixed(1));
+            const waveDir = marineData.current?.wave_direction ?? 140;
+            
+            const windKmh = weatherData.current?.wind_speed_10m ?? 18;
+            const windKts = parseFloat((windKmh * 0.539957).toFixed(0));
+            const windGustKmh = weatherData.current?.wind_gusts_10m ?? (windKmh * 1.3);
+            const windGustKts = parseFloat((windGustKmh * 0.539957).toFixed(0));
+            const windDirDeg = weatherData.current?.wind_direction_10m ?? 135;
+            
+            const tempC = weatherData.current?.temperature_2m ?? 20;
+            const tempF = Math.round(tempC * 9/5 + 32);
+            const visKm = weatherData.current?.visibility ?? 16;
+            const visNm = (visKm * 0.539957).toFixed(0);
+            const precipProb = weatherData.current?.precipitation_probability ?? 15;
+            
+            return {
+                waveHeight: waveH_ft,
+                wavePeriod: waveP,
+                waveDirection: waveDir,
+                windSpeed: windKts,
+                windGust: windGustKts,
+                windDirection: windDirDeg,
+                tempF: tempF,
+                visibility: visNm,
+                precipChance: precipProb,
+                raw: { marineData, weatherData }
+            };
+        }
+        
+        function degreesToCardinal(deg) {
+            const dirs = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+            return dirs[Math.round(deg / 22.5) % 16];
+        }
+        
+        async function fetchAndUpdateForecast(customLat = null, customLon = null) {
+            const lat = customLat !== null ? customLat : parseFloat(document.getElementById('lat-input').value);
+            const lon = customLon !== null ? customLon : parseFloat(document.getElementById('lon-input').value);
+            
+            if (isNaN(lat) || isNaN(lon)) {
+                alert("Please enter valid latitude and longitude.");
+                return;
+            }
+            
+            currentLat = lat;
+            currentLon = lon;
+            
+            const btns = document.querySelectorAll('button');
+            btns.forEach(b => b.disabled = true);
+            
+            try {
+                const data = await fetchMarineAndWeather(lat, lon);
+                currentForecastData = data;
+                fullMarineData = data.raw?.marineData || null;
+                fullWeatherData = data.raw?.weatherData || null;
+                
+                // Update UI cards
+                document.getElementById('wave-height').textContent = data.waveHeight;
+                document.getElementById('wave-period').textContent = data.wavePeriod;
+                document.getElementById('wave-dir').innerHTML = `Dominant • ${data.waveDirection}° ${degreesToCardinal(data.waveDirection)}`;
+                
+                document.getElementById('wind-speed').textContent = data.windSpeed;
+                document.getElementById('wind-gust').textContent = data.windGust;
+                document.getElementById('wind-dir-text').textContent = degreesToCardinal(data.windDirection);
+                
+                document.getElementById('air-temp').textContent = data.tempF;
+                document.getElementById('visibility').textContent = data.visibility;
+                document.getElementById('precip-chance').textContent = data.precipChance;
+                
+                // Update location label
+                document.getElementById('current-location').textContent = `${lat.toFixed(2)}°N, ${lon.toFixed(2)}°W`;
+                
+                // Calculate and show comfort
+                const scoreData = calculateComfortScore(data.waveHeight, data.wavePeriod, data.windSpeed);
+                updateComfortUI(scoreData);
+                updateRecommendedSpeed(data.waveHeight, data.wavePeriod);
+                
+                // Update 3D params
+                currentWaveHeight = data.waveHeight;
+                currentWavePeriod = data.wavePeriod;
+                currentWindSpeed = data.windSpeed;
+                
+                // Update sliders to match
+                document.getElementById('slider-wave').value = data.waveHeight;
+                document.getElementById('slider-period').value = data.wavePeriod;
+                document.getElementById('slider-wind').value = data.windSpeed;
+                document.getElementById('slider-wave-val').textContent = data.waveHeight.toFixed(1) + ' ft';
+                document.getElementById('slider-period-val').textContent = data.wavePeriod.toFixed(1) + ' s';
+                document.getElementById('slider-wind-val').textContent = data.windSpeed + ' kt';
+                
+                // Update chart
+                updateWaveChart(data.raw.marineData);
+                
+                // Auto sync 3D
+                setTimeout(() => {
+                    if (isAnimating) sync3DToForecast();
+                }, 420);
+                
+            } catch (err) {
+                console.error(err);
+                alert("Could not fetch live forecast. Using demo values. Check your internet connection or try again.");
+                // Fallback demo data
+                useDemoData();
+            } finally {
+                btns.forEach(b => b.disabled = false);
+            }
+        }
+        
+        function useDemoData() {
+            const demo = {
+                waveHeight: 3.1,
+                wavePeriod: 6.8,
+                waveDirection: 138,
+                windSpeed: 13,
+                windGust: 17,
+                windDirection: 142,
+                tempF: 71,
+                visibility: "9",
+                precipChance: 18
+            };
+            currentForecastData = demo;
+            
+            document.getElementById('wave-height').textContent = demo.waveHeight;
+            document.getElementById('wave-period').textContent = demo.wavePeriod;
+            document.getElementById('wave-dir').innerHTML = `Dominant • ${demo.waveDirection}° SE`;
+            document.getElementById('wind-speed').textContent = demo.windSpeed;
+            document.getElementById('wind-gust').textContent = demo.windGust;
+            document.getElementById('wind-dir-text').textContent = 'SE';
+            document.getElementById('air-temp').textContent = demo.tempF;
+            document.getElementById('visibility').textContent = demo.visibility;
+            document.getElementById('precip-chance').textContent = demo.precipChance;
+            
+            const scoreData = calculateComfortScore(demo.waveHeight, demo.wavePeriod, demo.windSpeed);
+            updateComfortUI(scoreData);
+            updateRecommendedSpeed(demo.waveHeight, demo.wavePeriod);
+            
+            currentWaveHeight = demo.waveHeight;
+            currentWavePeriod = demo.wavePeriod;
+            currentWindSpeed = demo.windSpeed;
+            
+            document.getElementById('slider-wave').value = demo.waveHeight;
+            document.getElementById('slider-period').value = demo.wavePeriod;
+            document.getElementById('slider-wind').value = demo.windSpeed;
+            document.getElementById('slider-wave-val').textContent = demo.waveHeight + ' ft';
+            document.getElementById('slider-period-val').textContent = demo.wavePeriod + ' s';
+            document.getElementById('slider-wind-val').textContent = demo.windSpeed + ' kt';
+        }
+        
+        function usePreset(lat, lon, label) {
+            document.getElementById('lat-input').value = lat;
+            document.getElementById('lon-input').value = lon;
+            document.getElementById('current-location').textContent = label;
+            
+            fetchAndUpdateForecast(lat, lon);
+        }
+        
+        function updateWaveChart(marineData) {
+            const ctx = document.getElementById('wave-chart');
+            if (!ctx) return;
+            
+            if (waveChart) waveChart.destroy();
+            
+            const hourly = marineData.hourly || {};
+            const times = (hourly.time || []).slice(0, 12).map(t => new Date(t).toLocaleTimeString([], {hour: 'numeric'}));
+            const waveHs = (hourly.wave_height || []).slice(0, 12).map(h => parseFloat((h * 3.28084).toFixed(1)));
+            
+            waveChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: times.length ? times : ['6am','9am','12pm','3pm','6pm','9pm'],
+                    datasets: [{
+                        label: 'Wave Height (ft)',
+                        data: waveHs.length ? waveHs : [2.4, 2.6, 2.9, 3.3, 3.1, 2.8],
+                        borderColor: '#67e8f9',
+                        backgroundColor: 'rgba(103, 232, 249, 0.12)',
+                        borderWidth: 3,
+                        tension: 0.38,
+                        fill: true,
+                        pointRadius: 0,
+                        pointHoverRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { color: 'rgba(148, 163, 184, 0.1)' }, ticks: { color: '#64748b', font: { size: 10 } } },
+                        y: { 
+                            grid: { color: 'rgba(148, 163, 184, 0.1)' }, 
+                            ticks: { color: '#64748b', font: { size: 10 }, stepSize: 1 },
+                            min: 0
+                        }
+                    },
+                    elements: { line: { borderJoinStyle: 'round' } }
+                }
+            });
+        }
+        
+        function refreshForecast() {
+            fetchAndUpdateForecast();
+        }
+        
+        // Day selector for multi-day forecast (Today / Tomorrow / +2 Days)
+        function selectForecastDay(offset) {
+            currentDayOffset = offset;
+            
+            // Update active button styles
+            for (let i = 0; i < 3; i++) {
+                const btn = document.getElementById(`day-${i}-btn`);
+                if (btn) {
+                    if (i === offset) {
+                        btn.classList.add('bg-cyan-400', 'text-slate-900', 'font-semibold');
+                        btn.classList.remove('hover:bg-cyan-400/10');
+                    } else {
+                        btn.classList.remove('bg-cyan-400', 'text-slate-900', 'font-semibold');
+                        btn.classList.add('hover:bg-cyan-400/10');
+                    }
+                }
+            }
+            
+            if (!fullMarineData) {
+                // If no full data yet, just refresh
+                fetchAndUpdateForecast();
+                return;
+            }
+            
+            // For demo: pick representative conditions from the selected day
+            // (In a full implementation we would slice hourly data by date)
+            const baseWave = currentForecastData?.waveHeight || 2.8;
+            const basePeriod = currentForecastData?.wavePeriod || 7.2;
+            
+            // Slight variation per "day" for demo purposes
+            let newWave = baseWave;
+            let newPeriod = basePeriod;
+            
+            if (offset === 1) { // Tomorrow
+                newWave = Math.max(1.5, baseWave * 0.85 + 0.4);
+                newPeriod = Math.min(9.5, basePeriod + 0.8);
+            } else if (offset === 2) { // +2 Days
+                newWave = Math.max(2.0, baseWave * 1.15);
+                newPeriod = Math.max(5.5, basePeriod - 0.6);
+            }
+            
+            // Update main metrics
+            document.getElementById('wave-height').textContent = newWave.toFixed(1);
+            document.getElementById('wave-period').textContent = newPeriod.toFixed(1);
+            
+            // Update comfort, speed and 3D
+            const scoreData = calculateComfortScore(newWave, newPeriod, currentForecastData?.windSpeed || 11);
+            updateComfortUI(scoreData);
+            updateRecommendedSpeed(newWave, newPeriod);
+            
+            currentWaveHeight = newWave;
+            currentWavePeriod = newPeriod;
+            
+            // Sync 3D
+            setTimeout(() => {
+                if (typeof sync3DToForecast === 'function') sync3DToForecast();
+            }, 150);
+            
+            // Update location label to show selected day
+            const locEl = document.getElementById('current-location');
+            if (locEl) {
+                const baseText = locEl.textContent.split(' • ')[0];
+                const dayLabel = offset === 0 ? 'Today' : offset === 1 ? 'Tomorrow' : '+2 Days';
+                locEl.textContent = `${baseText} • ${dayLabel}`;
+            }
+        }
+        
+        function initializeDashboard() {
+            initTailwind();
+            initThreeJS();
+            
+            // Set initial slider values
+            document.getElementById('slider-wave-val').textContent = '2.8 ft';
+            document.getElementById('slider-period-val').textContent = '7.2 s';
+            document.getElementById('slider-wind-val').textContent = '11 kt';
+            
+            // Initial demo data + fetch attempt
+            setTimeout(() => {
+                useDemoData();
+                updateRecommendedSpeed(2.8, 7.2); // initial recommended speed
+                
+                // Try to fetch real data in background
+                setTimeout(() => {
+                    const lat = parseFloat(document.getElementById('lat-input').value);
+                    const lon = parseFloat(document.getElementById('lon-input').value);
+                    fetchAndUpdateForecast(lat, lon).catch(() => {});
+                }, 1800);
+            }, 650);
+            
+            // Keyboard hint
+            console.log('%c[World Cat Dashboard] Tip: Double-click the 3D view to reset camera. Drag to orbit.', 'color:#64748b');
+            
+            // Easter egg: press "?" to random nice conditions
+            document.addEventListener('keydown', function(e) {
+                if (e.key === '?') {
+                    e.preventDefault();
+                    const nice = { waveHeight: 2.1, wavePeriod: 8.4, windSpeed: 7 };
+                    currentWaveHeight = nice.waveHeight;
+                    currentWavePeriod = nice.wavePeriod;
+                    currentWindSpeed = nice.windSpeed;
+                    
+                    document.getElementById('slider-wave').value = nice.waveHeight;
+                    document.getElementById('slider-period').value = nice.wavePeriod;
+                    document.getElementById('slider-wind').value = nice.windSpeed;
+                    updateSimulationFromSliders();
+                    
+                    const score = calculateComfortScore(nice.waveHeight, nice.wavePeriod, nice.windSpeed);
+                    updateComfortUI(score);
+                }
+            });
+        }
+        
+        // Boot everything
+        window.onload = initializeDashboard;
+    </script>
+</body>
+</html>
